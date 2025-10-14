@@ -7,7 +7,7 @@ from streamlit_folium import st_folium
 from io import BytesIO
 
 st.set_page_config(page_title="Center Finder", layout="wide")
-st.title("🏥 Sanoptis Add-On Center Finder")
+st.title("🏥 Center Finder – Adjustable Radius Map")
 
 # --- Load Data ---
 @st.cache_data
@@ -22,7 +22,7 @@ def load_data():
 
 df = load_data()
 
-# --- Geolocator for the user address ---
+# --- Geolocator ---
 geolocator = Nominatim(user_agent="center-finder")
 
 @st.cache_data
@@ -32,25 +32,26 @@ def geocode_address(address):
         return (location.latitude, location.longitude)
     return None
 
-# --- User Inputs ---
+# --- Sidebar / Controls ---
 st.subheader("🔍 Search Parameters")
 
-col1, col2 = st.columns([3, 1])
+col1, col2, col3 = st.columns([3, 1, 1])
 with col1:
     user_address = st.text_input(
-        "Enter an address (e.g. Maximilianstrasse 1, München):",
+        "Enter an address (e.g. Bahnhofstrasse 1, Zürich):",
+        key="user_address",
         placeholder="Type an address here..."
     )
 with col2:
     radius_km = st.number_input(
-        "Radius (km):", min_value=5, max_value=200, value=50, step=5
+        "Radius (km):", min_value=5, max_value=200, value=50, step=5, key="radius"
     )
+with col3:
+    if st.button("🔎 Search"):
+        st.session_state["search_started"] = True
 
-# Add a search button
-search_clicked = st.button("🔎 Search")
-
-# --- Only run the search when button is clicked ---
-if search_clicked:
+# --- Only show results if a search was triggered ---
+if "search_started" in st.session_state and st.session_state["search_started"]:
     if not user_address:
         st.warning("⚠️ Please enter an address before searching.")
     else:
@@ -58,7 +59,6 @@ if search_clicked:
         if not user_location:
             st.error("❌ Address could not be found. Please try again.")
         else:
-            # Calculate distances
             df["Distance_km"] = df.apply(
                 lambda row: geodesic(user_location, (row["Latitude"], row["Longitude"])).km
                 if pd.notnull(row["Latitude"]) and pd.notnull(row["Longitude"])
@@ -71,6 +71,16 @@ if search_clicked:
 
             # --- Map ---
             m = folium.Map(location=user_location, zoom_start=9)
+
+            # Draw circle for radius visualization
+            folium.Circle(
+                location=user_location,
+                radius=radius_km * 1000,
+                color="red",
+                fill=True,
+                fill_opacity=0.1
+            ).add_to(m)
+
             folium.Marker(
                 user_location, popup="📍 Your Address", icon=folium.Icon(color="red")
             ).add_to(m)
