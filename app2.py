@@ -32,10 +32,11 @@ def geocode_address(address):
         return (location.latitude, location.longitude)
     return None
 
+
 # --- Search Inputs ---
 st.subheader("🔍 Search Parameters")
 
-col1, col2, col3 = st.columns([3, 1, 1])
+col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
 with col1:
     user_address = st.text_input(
         "Enter an address (e.g. Maximilianstrasse 1, München):",
@@ -47,8 +48,17 @@ with col2:
         "Radius (km):", min_value=5, max_value=200, value=50, step=5, key="radius"
     )
 with col3:
+    show_circle = st.toggle("Show Radius Circle", value=True, key="show_circle")
+with col4:
     if st.button("🔎 Search"):
         st.session_state["search_started"] = True
+with col5:
+    if st.button("🔄 Reset Search"):
+        for key in ["search_started", "user_address", "radius", "show_circle"]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.experimental_rerun()
+
 
 # --- Run Search ---
 if "search_started" in st.session_state and st.session_state["search_started"]:
@@ -73,14 +83,15 @@ if "search_started" in st.session_state and st.session_state["search_started"]:
             # --- Map ---
             m = folium.Map(location=user_location, zoom_start=9)
 
-            # Circle showing search radius
-            folium.Circle(
-                location=user_location,
-                radius=radius_km * 1000,
-                color="red",
-                fill=True,
-                fill_opacity=0.1
-            ).add_to(m)
+            # Optional radius circle
+            if show_circle:
+                folium.Circle(
+                    location=user_location,
+                    radius=radius_km * 1000,
+                    color="red",
+                    fill=True,
+                    fill_opacity=0.1
+                ).add_to(m)
 
             # Marker for user location
             folium.Marker(
