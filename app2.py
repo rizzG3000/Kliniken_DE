@@ -7,7 +7,7 @@ from streamlit_folium import st_folium
 from io import BytesIO
 
 st.set_page_config(page_title="Center Finder", layout="wide")
-st.title("🏥 Center Finder – Adjustable Radius Map")
+st.title("🏥 Sanoptis Add-On Center Finder")
 
 # --- Load Data ---
 @st.cache_data
@@ -38,7 +38,7 @@ st.subheader("🔍 Search Parameters")
 col1, col2, col3 = st.columns([3, 1, 1])
 with col1:
     user_address = st.text_input(
-        "Enter an address (e.g. Bahnhofstrasse 1, Zürich):",
+        "Enter an address (e.g. Maximilianstrasse 1, München):",
         key="user_address",
         placeholder="Type an address here..."
     )
