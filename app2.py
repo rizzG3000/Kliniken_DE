@@ -98,14 +98,25 @@ if "search_started" in st.session_state and st.session_state["search_started"]:
                 user_location, popup="📍 Your Address", icon=folium.Icon(color="red")
             ).add_to(m)
 
-            # Markers for centers
+            # --- Markers for centers (improved popup design) ---
             for _, row in filtered_df.iterrows():
                 popup_info = f"""
-                <b>{row['Name']}</b><br>
-                Bereich: {row['Bereich']}<br>
-                Zentrum: {row['Zentrum']}<br>
-                Adresse: {row['Strasse']}, {row['PLZ']} {row['Stadt']}<br>
-                Entfernung: {row['Distance_km']:.1f} km
+                <div style="
+                    font-family: Arial, sans-serif;
+                    font-size: 13px;
+                    line-height: 1.4;
+                    padding: 6px 6px 6px 6px;
+                    border-radius: 8px;
+                    background-color: white;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                    width: 230px;
+                ">
+                    <strong style="font-size:14px; color:#1E3A8A;">{row['Name']}</strong><br>
+                    <b>Bereich:</b> <span style="color:#444;">{row['Bereich']}</span><br>
+                    <b>Zentrum:</b> <span style="color:#444;">{row['Zentrum']}</span><br>
+                    <b>Adresse:</b> <span style="color:#444;">{row['Strasse']}, {row['PLZ']} {row['Stadt']}</span><br>
+                    <b>Entfernung:</b> <span style="color:#444;">{row['Distance_km']:.1f} km</span>
+                </div>
                 """
                 folium.Marker(
                     location=[row["Latitude"], row["Longitude"]],
