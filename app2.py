@@ -12,9 +12,9 @@ st.title("🏥 Sanoptis Add-On Center Finder")
 # --- Load Data ---
 @st.cache_data
 def load_data():
-    df = pd.read_excel("251013_DE_Augenaerzte_Arzt_Auskunft_Fully_Cleaned_ and_Geocoded")
+    df = pd.read_excel("251013_DE_Augenaerzte_Arzt_Auskunft_Fully_Cleaned_and_Geocoded.xlsx")
     if not {"Latitude", "Longitude"}.issubset(df.columns):
-        st.error("❌ Missing Latitude/Longitude columns. Please upload the geocoded file.")
+        st.error("❌ Missing Latitude/Longitude columns. Please upload the fully geocoded file.")
     df["Full_Address"] = (
         df["Strasse"].astype(str) + ", " + df["PLZ"].astype(str) + " " + df["Stadt"].astype(str)
     )
