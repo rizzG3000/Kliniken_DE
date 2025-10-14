@@ -7,7 +7,7 @@ from streamlit_folium import st_folium
 from io import BytesIO
 
 st.set_page_config(page_title="Center Finder", layout="wide")
-st.title("🏥 Center Finder – 50 km Radius Map")
+st.title("🏥 Sanoptis Add-On Center Finder")
 
 # --- Load Data ---
 @st.cache_data
@@ -35,7 +35,7 @@ def geocode_address(address):
     return None
 
 # --- User Input ---
-user_address = st.text_input("Enter any address to search around (e.g. Bahnhofstrasse 1, Zürich):")
+user_address = st.text_input("Enter any address to search around (e.g. Maximilianstrasse 1, München):")
 
 if user_address:
     user_location = geocode_address(user_address)
