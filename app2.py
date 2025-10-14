@@ -13,9 +13,7 @@ st.title("🏥 Sanoptis Add-On Center Finder")
 @st.cache_data
 def load_data():
     df = pd.read_excel("251013_DE_Augenaerzte_Arzt_Auskunft_Geocoded.xlsx")
-    # Ensure required columns exist
-    expected_cols = {"Latitude", "Longitude"}
-    if not expected_cols.issubset(df.columns):
+    if not {"Latitude", "Longitude"}.issubset(df.columns):
         st.error("❌ Missing Latitude/Longitude columns. Please upload the geocoded file.")
     df["Full_Address"] = (
         df["Strasse"].astype(str) + ", " + df["PLZ"].astype(str) + " " + df["Stadt"].astype(str)
@@ -24,7 +22,7 @@ def load_data():
 
 df = load_data()
 
-# --- Geocode only the user's input address ---
+# --- Geolocator for the user address ---
 geolocator = Nominatim(user_agent="center-finder")
 
 @st.cache_data
@@ -34,57 +32,73 @@ def geocode_address(address):
         return (location.latitude, location.longitude)
     return None
 
-# --- User Input ---
-user_address = st.text_input("Enter any address to search around (e.g. Maximilianstrasse 1, München):")
+# --- User Inputs ---
+st.subheader("🔍 Search Parameters")
 
-if user_address:
-    user_location = geocode_address(user_address)
-    if not user_location:
-        st.error("Address could not be found. Please try again.")
+col1, col2 = st.columns([3, 1])
+with col1:
+    user_address = st.text_input(
+        "Enter an address (e.g. Maximilianstrasse 1, München):",
+        placeholder="Type an address here..."
+    )
+with col2:
+    radius_km = st.number_input(
+        "Radius (km):", min_value=5, max_value=200, value=50, step=5
+    )
+
+# Add a search button
+search_clicked = st.button("🔎 Search")
+
+# --- Only run the search when button is clicked ---
+if search_clicked:
+    if not user_address:
+        st.warning("⚠️ Please enter an address before searching.")
     else:
-        radius_km = 50
+        user_location = geocode_address(user_address)
+        if not user_location:
+            st.error("❌ Address could not be found. Please try again.")
+        else:
+            # Calculate distances
+            df["Distance_km"] = df.apply(
+                lambda row: geodesic(user_location, (row["Latitude"], row["Longitude"])).km
+                if pd.notnull(row["Latitude"]) and pd.notnull(row["Longitude"])
+                else None,
+                axis=1,
+            )
 
-        # Compute distance from user location to each center
-        df["Distance_km"] = df.apply(
-            lambda row: geodesic(user_location, (row["Latitude"], row["Longitude"])).km
-            if pd.notnull(row["Latitude"]) and pd.notnull(row["Longitude"])
-            else None,
-            axis=1,
-        )
+            filtered_df = df[df["Distance_km"] <= radius_km].copy()
+            st.success(f"✅ {len(filtered_df)} centers found within {radius_km} km of your address.")
 
-        filtered_df = df[df["Distance_km"] <= radius_km].copy()
-        st.success(f"✅ {len(filtered_df)} centers found within {radius_km} km of your address.")
-
-        # --- Map ---
-        m = folium.Map(location=user_location, zoom_start=9)
-        folium.Marker(
-            user_location, popup="Your Address", icon=folium.Icon(color="red")
-        ).add_to(m)
-
-        for _, row in filtered_df.iterrows():
-            popup_info = f"""
-            <b>{row['Name']}</b><br>
-            Bereich: {row['Bereich']}<br>
-            Zentrum: {row['Zentrum']}<br>
-            Adresse: {row['Strasse']}, {row['PLZ']} {row['Stadt']}
-            """
+            # --- Map ---
+            m = folium.Map(location=user_location, zoom_start=9)
             folium.Marker(
-                location=[row["Latitude"], row["Longitude"]],
-                popup=popup_info,
-                icon=folium.Icon(color="blue", icon="info-sign"),
+                user_location, popup="📍 Your Address", icon=folium.Icon(color="red")
             ).add_to(m)
 
-        st_folium(m, width=900, height=600)
+            for _, row in filtered_df.iterrows():
+                popup_info = f"""
+                <b>{row['Name']}</b><br>
+                Bereich: {row['Bereich']}<br>
+                Zentrum: {row['Zentrum']}<br>
+                Adresse: {row['Strasse']}, {row['PLZ']} {row['Stadt']}
+                """
+                folium.Marker(
+                    location=[row["Latitude"], row["Longitude"]],
+                    popup=popup_info,
+                    icon=folium.Icon(color="blue", icon="info-sign"),
+                ).add_to(m)
 
-        # --- Download Filtered Excel ---
-        output = BytesIO()
-        filtered_df[
-            ["Name", "Bereich", "Zentrum", "Strasse", "PLZ", "Stadt", "Distance_km"]
-        ].to_excel(output, index=False)
+            st_folium(m, width=900, height=600)
 
-        st.download_button(
-            label="📥 Download Filtered Centers (Excel)",
-            data=output.getvalue(),
-            file_name="Filtered_Centers.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
+            # --- Download Filtered Excel ---
+            output = BytesIO()
+            filtered_df[
+                ["Name", "Bereich", "Zentrum", "Strasse", "PLZ", "Stadt", "Distance_km"]
+            ].to_excel(output, index=False)
+
+            st.download_button(
+                label="📥 Download Filtered Centers (Excel)",
+                data=output.getvalue(),
+                file_name="Filtered_Centers.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
