@@ -12,7 +12,7 @@ st.title("🏥 Sanoptis Add-On Center Finder")
 # --- Load Data ---
 @st.cache_data
 def load_data():
-    df = pd.read_excel("251013_DE_Augenaerzte_Arzt_Auskunft_Fully_Cleaned_ and_Geocoded.xlsx")
+    df = pd.read_excel("251024_Aggregated_Centers_Final_v2.xlsx")
     if not {"Latitude", "Longitude"}.issubset(df.columns):
         st.error("❌ Missing Latitude/Longitude columns. Please upload the fully geocoded file.")
     df["Full_Address"] = (
@@ -98,8 +98,9 @@ if "search_started" in st.session_state and st.session_state["search_started"]:
                 user_location, popup="📍 Your Address", icon=folium.Icon(color="red")
             ).add_to(m)
 
-            # --- Markers for centers (improved popup design) ---
+            # --- Markers for centers ---
             for _, row in filtered_df.iterrows():
+                num_docs = row["num_doctors"] if pd.notnull(row["num_doctors"]) else "N/A"
                 popup_info = f"""
                 <div style="
                     font-family: Arial, sans-serif;
@@ -111,9 +112,9 @@ if "search_started" in st.session_state and st.session_state["search_started"]:
                     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
                     width: 230px;
                 ">
-                    <strong style="font-size:14px; color:#1E3A8A;">{row['Name']}</strong><br>
-                    <b>Bereich:</b> <span style="color:#444;">{row['Bereich']}</span><br>
-                    <b>Zentrum:</b> <span style="color:#444;">{row['Zentrum']}</span><br>
+                    <strong style="font-size:14px; color:#1E3A8A;">{row['center_name']}</strong><br>
+                    <b>Type:</b> <span style="color:#444;">{row['Type']}</span><br>
+                    <b>Nr. of Doctors:</b> <span style="color:#444;">{num_docs}</span><br>
                     <b>Adresse:</b> <span style="color:#444;">{row['Strasse']}, {row['PLZ']} {row['Stadt']}</span><br>
                     <b>Entfernung:</b> <span style="color:#444;">{row['Distance_km']:.1f} km</span>
                 </div>
@@ -132,7 +133,7 @@ if "search_started" in st.session_state and st.session_state["search_started"]:
                 ]
                 m.fit_bounds(bounds, padding=(30, 30))
 
-            # Display map (no flicker / no white overlay)
+            # Display map
             st_folium(
                 m,
                 width=900,
@@ -145,7 +146,7 @@ if "search_started" in st.session_state and st.session_state["search_started"]:
             # --- Download Filtered Excel ---
             output = BytesIO()
             filtered_df[
-                ["Name", "Bereich", "Zentrum", "Strasse", "PLZ", "Stadt", "Distance_km"]
+                ["center_name", "Type", "num_doctors", "Strasse", "PLZ", "Stadt", "Distance_km"]
             ].to_excel(output, index=False)
 
             st.download_button(
