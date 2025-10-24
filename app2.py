@@ -140,11 +140,11 @@ if "search_started" in st.session_state and st.session_state["search_started"]:
                 ]
                 m.fit_bounds(bounds, padding=(30, 30))
 
-            # Display map (slightly taller for a more square look)
+            # Display map — increased height for a more square layout
             st_folium(
                 m,
                 width=900,
-                height=720,  # ⬅️ increased from 600 to 720 for more square aspect
+                height=900,  # ⬅️ Taller map for better balance
                 key="map",
                 use_container_width=True,
                 returned_objects=[],  # prevents overlay issue
