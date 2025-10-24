@@ -100,7 +100,15 @@ if "search_started" in st.session_state and st.session_state["search_started"]:
 
             # --- Markers for centers ---
             for _, row in filtered_df.iterrows():
-                num_docs = row["num_doctors"] if pd.notnull(row["num_doctors"]) else "N/A"
+                # Format number of doctors cleanly (no decimals, show "N/A" if missing)
+                if pd.notnull(row["num_doctors"]) and str(row["num_doctors"]).strip().lower() != "n/a":
+                    try:
+                        num_docs_display = str(int(float(row["num_doctors"])))
+                    except:
+                        num_docs_display = str(row["num_doctors"])
+                else:
+                    num_docs_display = "N/A"
+
                 popup_info = f"""
                 <div style="
                     font-family: Arial, sans-serif;
@@ -114,7 +122,7 @@ if "search_started" in st.session_state and st.session_state["search_started"]:
                 ">
                     <strong style="font-size:14px; color:#1E3A8A;">{row['center_name']}</strong><br>
                     <b>Type:</b> <span style="color:#444;">{row['Type']}</span><br>
-                    <b>Nr. of Doctors:</b> <span style="color:#444;">{num_docs}</span><br>
+                    <b>Nr. of Doctors:</b> <span style="color:#444;">{num_docs_display}</span><br>
                     <b>Adresse:</b> <span style="color:#444;">{row['Strasse']}, {row['PLZ']} {row['Stadt']}</span><br>
                     <b>Entfernung:</b> <span style="color:#444;">{row['Distance_km']:.1f} km</span>
                 </div>
